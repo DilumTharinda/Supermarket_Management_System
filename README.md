@@ -1,2 +1,2 @@
-# Supermarket_Management_System
+# Supermarket Management System
 University Project OOP + SQL DataBase
