@@ -46,8 +46,31 @@ public class Login extends JFrame {
         textPassword.setBorder(BorderFactory.createLineBorder(Color.RED, 4, true));
         add(textPassword);
 
+        //Login Button
+        JButton loginBtn = new JButton("Login");
+        loginBtn.setBounds(210,160,100,40);
+        loginBtn.setFont(new Font("Arial",Font.BOLD,16));
+        loginBtn.setBackground(Color.black);
+        loginBtn.setForeground(Color.white);//when clicked
+        add(loginBtn);
+
+        //Lock Icon
+        ImageIcon locked = new ImageIcon(ClassLoader.getSystemResource("asset/Locked.png"));
+        Image lock_Size = locked.getImage().getScaledInstance(100,100,Image.SCALE_DEFAULT);
+        JLabel label = new JLabel(new ImageIcon(lock_Size));
+        label.setBounds(400,60,100,100);
+        add(label);
+
+        //Back Button
+        JButton backBtn = new JButton("Back");
+        backBtn.setBounds(210,210,100,40);
+        backBtn.setFont(new Font("Arial",Font.BOLD,16));
+        backBtn.setBackground(Color.black);
+        backBtn.setForeground(Color.white);//when clicked
+        add(backBtn);
+
         //Window
-        setSize(550,250);
+        setSize(550,300);
         setLocation(480,300);
         setLayout(null);
         setResizable(false);
@@ -55,7 +78,8 @@ public class Login extends JFrame {
         setVisible(true);
     }
 
-    public static void main(String [] args){
+    public static
+    void main(String [] args){
         new Login();
     }
 }
