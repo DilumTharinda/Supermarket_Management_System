@@ -35,10 +35,12 @@ public class Splash extends JFrame {
         try {
             /*
             * Thread - mini program that runs inside main program
-            * sleep - close window after 5 sec
+            * sleep - close window after 3 sec
              */
-            Thread.sleep(5000);
+            Thread.sleep(3000);
             setVisible(false);//hide window
+            new Login();
+
         } catch (Exception e) {
             e.printStackTrace();
         }

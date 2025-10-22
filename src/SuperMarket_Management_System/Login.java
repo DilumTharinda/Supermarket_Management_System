@@ -2,9 +2,20 @@ package SuperMarket_Management_System;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
-public class Login extends JFrame {
+public class Login extends JFrame implements ActionListener {
 
+    JButton loginBtn = new JButton("Login");// we can't write this in constructor. if we write, we can't use it for ActionListener(out of constructor)
+    JButton backBtn = new JButton("Back");
+
+    JTextField textUsername;
+    JPasswordField textPassword;
 
     //Constructor
     public Login(){
@@ -24,7 +35,7 @@ public class Login extends JFrame {
         add(username);
 
         //Username - type
-        JTextField textUsername = new JTextField();
+        textUsername = new JTextField();
         textUsername.setBounds(150,61,250,35);
         textUsername.setFont(new Font("Arial", Font.ITALIC, 18)); // Font name, style, size
         textUsername.setBackground(new Color(210, 255, 255));
@@ -38,8 +49,8 @@ public class Login extends JFrame {
         password.setBounds(40,100,100,50);
         add(password);
 
-        //Passward - type
-        JPasswordField textPassword = new JPasswordField();
+        //Password - type
+        textPassword = new JPasswordField();
         textPassword.setBounds(150,105,250,35);
         textPassword.setFont(new Font("Arial", Font.ITALIC, 18));
         textPassword.setBackground(new Color(210, 255, 255));
@@ -47,26 +58,26 @@ public class Login extends JFrame {
         add(textPassword);
 
         //Login Button
-        JButton loginBtn = new JButton("Login");
         loginBtn.setBounds(210,160,100,40);
         loginBtn.setFont(new Font("Arial",Font.BOLD,16));
         loginBtn.setBackground(Color.black);
         loginBtn.setForeground(Color.white);//when clicked
+        loginBtn.addActionListener(this);
         add(loginBtn);
 
         //Lock Icon
         ImageIcon locked = new ImageIcon(ClassLoader.getSystemResource("asset/Locked.png"));
-        Image lock_Size = locked.getImage().getScaledInstance(100,100,Image.SCALE_DEFAULT);
+        Image lock_Size = locked.getImage().getScaledInstance(80,80,Image.SCALE_DEFAULT);
         JLabel label = new JLabel(new ImageIcon(lock_Size));
-        label.setBounds(400,60,100,100);
+        label.setBounds(420,58,80,80);
         add(label);
 
         //Back Button
-        JButton backBtn = new JButton("Back");
         backBtn.setBounds(210,210,100,40);
         backBtn.setFont(new Font("Arial",Font.BOLD,16));
         backBtn.setBackground(Color.black);
         backBtn.setForeground(Color.white);//when clicked
+        backBtn.addActionListener(this);
         add(backBtn);
 
         //Window
@@ -78,8 +89,57 @@ public class Login extends JFrame {
         setVisible(true);
     }
 
+    @Override
+    public void actionPerformed(ActionEvent event) {
+
+        if (event.getSource() == loginBtn) {
+
+            String username = textUsername.getText();
+            String password = new String(textPassword.getPassword());
+
+            if (username.isEmpty() || password.isEmpty()){
+                JOptionPane.showMessageDialog(this,"Please enter both UserName and Password");
+                return;
+            }
+
+            try{
+
+                //connect database
+                Connection connection = DataBase_Connection.getConnection();
+
+                String sql_query = "SELECT * FROM users WHERE username = ? AND password = ?";
+                PreparedStatement pre_stmt = connection.prepareStatement(sql_query);
+                pre_stmt.setString(1,username);
+                pre_stmt.setString(2,password);
+
+                ResultSet rs = pre_stmt.executeQuery();
+
+                if(rs.next()){ //rs.next() = check both entered and database details are equal
+                    JOptionPane.showMessageDialog(this,"Login Successful");
+                    this.dispose();// close login window
+                    new Home(username);
+                }else{
+                    JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+
+                rs.close();
+                pre_stmt.close();
+                connection.close();
+
+            }catch (SQLException s){
+            s.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Database Error: " + s.getMessage());
+            }
+
+        }else if(event.getSource() == backBtn){
+            this.dispose();
+        }
+    }
+
     public static
     void main(String [] args){
         new Login();
     }
+
+
 }
