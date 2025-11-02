@@ -69,7 +69,7 @@ public class Login extends JFrame implements ActionListener {
         add(loginBtn);
 
         //Lock Icon
-        ImageIcon locked = new ImageIcon(ClassLoader.getSystemResource("asset/Locked.png"));
+        ImageIcon locked = new ImageIcon(getClass().getClassLoader().getResource("Asset/Locked.png"));
         Image lock_Size = locked.getImage().getScaledInstance(80,80,Image.SCALE_DEFAULT);
         JLabel label = new JLabel(new ImageIcon(lock_Size));
         label.setBounds(420,58,80,80);

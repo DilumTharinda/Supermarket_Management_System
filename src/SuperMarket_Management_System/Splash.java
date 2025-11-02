@@ -10,7 +10,7 @@ public class Splash extends JFrame {
 
         //Background GIF
         //Load GIF from Asset
-        ImageIcon splash = new ImageIcon(ClassLoader.getSystemResource("asset/SuperMarketIntro1.gif"));
+        ImageIcon splash = new ImageIcon(getClass().getClassLoader().getResource("Asset/SuperMarketIntro.gif"));
         // Create label
         JLabel background = new JLabel(splash);
         // Set position and add to frame

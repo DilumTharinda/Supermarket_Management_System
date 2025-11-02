@@ -33,7 +33,7 @@ public class Home extends JFrame implements ActionListener {
 
         //Back Image
         //Load image from asset
-        ImageIcon home = new ImageIcon(ClassLoader.getSystemResource("asset/Home.jpg"));
+        ImageIcon home = new ImageIcon(getClass().getClassLoader().getResource("Asset/Home.jpg"));
         //set size
         Image scaledImage = home.getImage().getScaledInstance(1280,720,Image.SCALE_SMOOTH);
         //Create Label
