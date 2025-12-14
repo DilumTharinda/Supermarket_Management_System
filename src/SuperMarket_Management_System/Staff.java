@@ -157,7 +157,7 @@ public class Staff extends JFrame implements ActionListener {
 
         String[] positions = {"Select Position", "Manager", "Assistant Manager", "Supervisor",
                 "Department Manager", "Cashier", "Sales Assistant", "Storekeeper",
-                "Stock Clerk", "HR", "Admin", "Accountant", "IT", "System Admin"};
+                "Stock Clerk", "HR", "Admin", "Accountant", "IT", "System Admin", "Security"};
         cmbPosition = new JComboBox<>(positions);
         cmbPosition.setBounds(870, 110, 200, 25);
         add(cmbPosition);

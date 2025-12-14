@@ -143,7 +143,7 @@ public class Items extends JFrame implements ActionListener {
         add(lblCategory);
 
         String[] categories = {"Select Category", "Beverages","Electronics","Accessories","Dairy", "Bakery", "Snacks",
-                "Fruits", "Vegetables", "Meat", "Frozen", "Personal Care", "Household"};
+                "Fruits", "Vegetables", "Meat", "Frozen", "Personal Care", "Household","Grains","Condiments","Seafood"};
         cmbCategory = new JComboBox<>(categories);
         cmbCategory.setBounds(470, 110, 150, 25);
         add(cmbCategory);

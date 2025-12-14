@@ -213,7 +213,7 @@ public class Home extends JFrame implements ActionListener {
                 //remove users, staff, supplier, supplier order access
                 break;
 
-            case "storekeeper":
+            case "Stock Clerk":
                 Items.setVisible(true);
                 Supplier.setVisible(true);
                 SupplierOrder.setVisible(true);
@@ -232,11 +232,6 @@ public class Home extends JFrame implements ActionListener {
                 Users.setVisible(true);
                 Staff.setVisible(true);
                 Customer.setVisible(true);
-                break;
-            case "supplier":
-                // Supplier has access to: supplier_order, supplier
-                SupplierOrder.setVisible(true);
-                Supplier.setVisible(true);
                 break;
 
             default:

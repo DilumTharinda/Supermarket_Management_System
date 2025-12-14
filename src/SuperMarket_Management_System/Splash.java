@@ -44,7 +44,8 @@ public class Splash extends JFrame {
         }
     }
     public static void main(String [] args){
-      new Splash();
+
+        new Splash();
     }
 
 }
