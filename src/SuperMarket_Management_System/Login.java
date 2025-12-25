@@ -11,15 +11,13 @@ import java.sql.SQLException;
 
 public class Login extends JFrame implements ActionListener {
 
-    JButton loginBtn = new JButton("Login"); // we can't write this in constructor
+    JButton loginBtn = new JButton("Login");
     JButton closeBtn = new JButton("Close");
 
-    JTextField textUsername;  // Username = SuperMarket
-    JPasswordField textPassword; // Password = SuperMarket
+    JTextField textUsername;
+    JPasswordField textPassword;
 
-    String position; // will be passed to Home.java
-
-    //Constructor
+    String position;
     public Login(){
         setTitle("Login");
 
@@ -41,7 +39,6 @@ public class Login extends JFrame implements ActionListener {
         textUsername = new JTextField();
         textUsername.setBounds(150,61,250,35);
         textUsername.setFont(new Font("Arial", Font.ITALIC, 18));
-        //textUsername.setBackground(new Color(210, 255, 255));
         textUsername.setBorder(BorderFactory.createLineBorder(Color.RED, 4, true));
         add(textUsername);
 
@@ -109,29 +106,30 @@ public class Login extends JFrame implements ActionListener {
                 //connect database
                 Connection connection = DataBase_Connection.getConnection();
 
-                String sql_query = "SELECT * FROM users WHERE username = ? AND password = ?";
+                String sql_query = "SELECT s.Position, u.password " +
+                        "FROM user u " +
+                        "INNER JOIN staff s ON u.Staff_ID = s.Staff_ID " +
+                        "WHERE u.Username = ?";
                 PreparedStatement pre_stmt = connection.prepareStatement(sql_query);
+                String checkUserSQL = "SELECT Staff_ID FROM user WHERE username = ? AND password = ?";
                 pre_stmt.setString(1, username);
-                pre_stmt.setString(2, password);
+
 
                 ResultSet rs = pre_stmt.executeQuery();
-
-                if (rs.next()) { // check if there is a matching record
-                    String dbUsername = rs.getString("username");
+               //password match check
+                if (rs.next()) {
                     String dbPassword = rs.getString("password");
                     position = rs.getString("Position");
 
-                    if (username.equals(dbUsername) && password.equals(dbPassword)) {
-                        //JOptionPane.showMessageDialog(this,"Login Successful");
-                        this.dispose(); // close login window
+                    if (dbPassword.equals(password)) {
+                        this.dispose();
                         new Home(username, position);
                     } else {
-                        JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Invalid Password (Case Sensitive)!", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 } else {
-                    JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Username not found!", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-
                 rs.close();
                 pre_stmt.close();
                 connection.close();
@@ -146,6 +144,8 @@ public class Login extends JFrame implements ActionListener {
         }
     }
 
-
+    public static void main(String[] args){
+        new Login();
+    }
 
 }

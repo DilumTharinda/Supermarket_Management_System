@@ -18,7 +18,7 @@ public class Customer_Order extends JFrame implements ActionListener {
     JButton btnAdd, btnUpdate, btnDelete, btnPrint, btnBack, btnRefresh;
 
     // Input fields
-    JTextField txtOrderID, txtStaffID, txtItemID, txtQuantity, txtCustomerID, txtPurchaseDate, txtPaymentMethod, txtTotalPrice;
+    JTextField txtOrderID, txtStaffID, txtCustomerID, txtPurchaseDate, txtTotalPrice;
 
     // Table
     JTable table;
@@ -119,26 +119,6 @@ public class Customer_Order extends JFrame implements ActionListener {
         txtStaffID.setBounds(470, 70, 150, 25);
         add(txtStaffID);
 
-        // Item ID
-        JLabel lblItemID = new JLabel("Item ID:");
-        lblItemID.setBounds(650, 70, 120, 25);
-        lblItemID.setFont(new Font("Arial", Font.BOLD, 14));
-        add(lblItemID);
-
-        txtItemID = new JTextField();
-        txtItemID.setBounds(770, 70, 150, 25);
-        add(txtItemID);
-
-        // Quantity
-        JLabel lblQuantity = new JLabel("Quantity:");
-        lblQuantity.setBounds(950, 70, 120, 25);
-        lblQuantity.setFont(new Font("Arial", Font.BOLD, 14));
-        add(lblQuantity);
-
-        txtQuantity = new JTextField();
-        txtQuantity.setBounds(1050, 70, 100, 25);
-        add(txtQuantity);
-
         // Customer ID
         JLabel lblCustomerID = new JLabel("Customer ID:");
         lblCustomerID.setBounds(50, 110, 120, 25);
@@ -159,24 +139,14 @@ public class Customer_Order extends JFrame implements ActionListener {
         txtPurchaseDate.setBounds(470, 110, 150, 25);
         add(txtPurchaseDate);
 
-        // Payment Method
-        JLabel lblPaymentMethod= new JLabel("Payment Method:");
-        lblPaymentMethod.setBounds(650, 110, 120, 25);
-        lblPaymentMethod.setFont(new Font("Arial", Font.BOLD, 14));
-        add(lblPaymentMethod);
-
-        txtPaymentMethod = new JTextField();
-        txtPaymentMethod.setBounds(770, 110, 150, 25);
-        add(txtPaymentMethod);
-
         // Total Price
         JLabel lblTotalPrice = new JLabel("Total Price:");
-        lblTotalPrice.setBounds(950, 110, 120, 25);
+        lblTotalPrice.setBounds(650, 70, 120, 25);
         lblTotalPrice.setFont(new Font("Arial", Font.BOLD, 14));
         add(lblTotalPrice);
 
         txtTotalPrice = new JTextField();
-        txtTotalPrice.setBounds(1050, 110, 100, 25);
+        txtTotalPrice.setBounds(750, 70, 100, 25);
         add(txtTotalPrice);
     }
 
@@ -243,7 +213,7 @@ public class Customer_Order extends JFrame implements ActionListener {
     // Create table panel
     private void createTablePanel() {
         // Table model
-        String[] columnNames = {"Order ID", "Staff ID", "Item ID", "Quantity", "Customer ID", "Purchase Date", "Payment Method", "Total Price"};
+        String[] columnNames = {"Order ID", "Staff ID", "Customer ID", "Purchase Date", "Total Price"};
         model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
         table.setFont(new Font("Arial", Font.PLAIN, 12));
@@ -255,12 +225,9 @@ public class Customer_Order extends JFrame implements ActionListener {
                 int row = table.getSelectedRow();
                 txtOrderID.setText(model.getValueAt(row, 0).toString());
                 txtStaffID.setText(model.getValueAt(row, 1).toString());
-                txtItemID.setText(model.getValueAt(row, 2).toString());
-                txtQuantity.setText(model.getValueAt(row, 3).toString());
-                txtCustomerID.setText(model.getValueAt(row, 4).toString());
-                txtPurchaseDate.setText(model.getValueAt(row, 5).toString());
-                txtPaymentMethod.setText(model.getValueAt(row, 6).toString());
-                txtTotalPrice.setText(model.getValueAt(row, 7).toString());
+                txtCustomerID.setText(model.getValueAt(row, 2).toString());
+                txtPurchaseDate.setText(model.getValueAt(row, 3).toString());
+                txtTotalPrice.setText(model.getValueAt(row, 4).toString());
             }
         });
 
@@ -285,14 +252,11 @@ public class Customer_Order extends JFrame implements ActionListener {
             while (rs.next()) {
                 String OrderID = rs.getString("Order_ID");
                 String StaffID = rs.getString("Staff_ID");
-                String ItemID = rs.getString("Item_ID");
-                String Quantity = rs.getString("Quantity");
                 String CustomerID = rs.getString("Customer_ID");
                 String PurchaseDate = rs.getString("Purchase_Date");
-                String PaymentMethod = rs.getString("Payment_method");
                 String TotalPrice = rs.getString("Total_Price");
 
-                model.addRow(new Object[]{OrderID, StaffID, ItemID, Quantity, CustomerID,PurchaseDate,PaymentMethod,TotalPrice});
+                model.addRow(new Object[]{OrderID, StaffID, CustomerID,PurchaseDate,TotalPrice});
             }
 
             rs.close();
@@ -305,34 +269,37 @@ public class Customer_Order extends JFrame implements ActionListener {
         }
     }
 
+
+
     // Add new customer order
     private void addCustomerorder() {
         String OrderID= txtOrderID.getText().trim();
         String StaffID = txtStaffID.getText().trim();
-        String ItemID = txtItemID.getText().trim();
-        String Quantity = txtQuantity.getText().trim();
         String CustomerID = txtCustomerID.getText().trim();
         String PurchaseDate = txtPurchaseDate.getText().trim();
-        String PaymentMethod = txtPaymentMethod.getText().trim();
         String TotalPrice = txtTotalPrice.getText().trim();
 
-        if (OrderID.isEmpty() || ItemID.isEmpty() || CustomerID.isEmpty() || TotalPrice.isEmpty() ) {
+        if (OrderID.isEmpty() ||  CustomerID.isEmpty() || TotalPrice.isEmpty() ) {
             JOptionPane.showMessageDialog(this, "Please fill all required fields!");
             return;
         }
+        PreparedStatement checkStockStmt = null;
+        PreparedStatement insertOrderStmt = null;
+        PreparedStatement updateStockStmt = null;
+        ResultSet rs = null;
 
         try {
             Connection connection = DataBase_Connection.getConnection();
-            String query = "INSERT INTO customer_order (Order_ID, Staff_ID , Item_ID, Quantity, Customer_ID, Purchase_Date, Payment_method, Total_Price) VALUES (?, ?, ?, ?, ? ,? ,? ,?)";
+            connection.setAutoCommit(false);
+
+
+            String query = "INSERT INTO customer_order (Order_ID, Staff_ID ,  Customer_ID, Purchase_Date,Total_Price) VALUES (?, ?, ?, ?, ? )";
             PreparedStatement pstmt = connection.prepareStatement(query);
             pstmt.setString(1, OrderID);
             pstmt.setString(2, StaffID);
-            pstmt.setString(3, ItemID);
-            pstmt.setString(4, Quantity);
-            pstmt.setString(5, CustomerID);
-            pstmt.setString(6, PurchaseDate);
-            pstmt.setString(7, PaymentMethod);
-            pstmt.setString(8, TotalPrice);
+            pstmt.setString(3, CustomerID);
+            pstmt.setString(4, PurchaseDate);
+            pstmt.setString(5, TotalPrice);
 
             int result = pstmt.executeUpdate();
 
@@ -355,15 +322,16 @@ public class Customer_Order extends JFrame implements ActionListener {
     private void updateCustomerorder() {
         String OrderID= txtOrderID.getText().trim();
         String StaffID = txtStaffID.getText().trim();
-        String ItemID = txtItemID.getText().trim();
-        String Quantity = txtQuantity.getText().trim();
         String CustomerID = txtCustomerID.getText().trim();
         String PurchaseDate = txtPurchaseDate.getText().trim();
-        String PaymentMethod = txtPaymentMethod.getText().trim();
         String TotalPrice = txtTotalPrice.getText().trim();
 
-        if (OrderID.isEmpty() || ItemID.isEmpty() || CustomerID.isEmpty() || TotalPrice.isEmpty() ) {
+        if (OrderID.isEmpty() || CustomerID.isEmpty() || TotalPrice.isEmpty() ) {
             JOptionPane.showMessageDialog(this, "Please fill all required fields!");
+            return;
+        }
+        if (TotalPrice.equals("0.00") || TotalPrice.equals("0")) {
+            JOptionPane.showMessageDialog(this, "Invalid Item ID or Price calculation failed. Please check Item ID.");
             return;
         }
 
@@ -372,13 +340,10 @@ public class Customer_Order extends JFrame implements ActionListener {
             String query = "UPDATE customer_order SET Staff_ID=?, Item_ID=?, Quantity=?, Customer_ID=?, Purchase_Date=?, Payment_method=?, Total_Price=? WHERE Order_ID=?";
             PreparedStatement pstmt = connection.prepareStatement(query);
             pstmt.setString(1, StaffID);
-            pstmt.setString(2, ItemID);
-            pstmt.setString(3, Quantity);
-            pstmt.setString(4, CustomerID);
-            pstmt.setString(5, PurchaseDate);
-            pstmt.setString(6, PaymentMethod);
-            pstmt.setString(7, TotalPrice);
-            pstmt.setString(8, OrderID);
+            pstmt.setString(2, CustomerID);
+            pstmt.setString(3, PurchaseDate);
+            pstmt.setString(4, TotalPrice);
+            pstmt.setString(5, OrderID);
 
             int result = pstmt.executeUpdate();
 
@@ -489,11 +454,8 @@ public class Customer_Order extends JFrame implements ActionListener {
     private void clearFields() {
         txtOrderID.setText("");
         txtStaffID.setText("");
-        txtItemID.setText("");
-        txtQuantity.setText("");
         txtCustomerID.setText("");
         txtPurchaseDate.setText("");
-        txtPaymentMethod.setText("");
         txtTotalPrice.setText("");
     }
 

@@ -21,6 +21,7 @@ public class Staff extends JFrame implements ActionListener {
     JTextField txtStaffID, txtFName, txtLName, txtContactNo, txtAddress;
     JComboBox<String> cmbPosition;
 
+
     // Table
     JTable table;
     DefaultTableModel model;
@@ -41,29 +42,23 @@ public class Staff extends JFrame implements ActionListener {
 
         setTitle("Staff Management - " + username + " (" + position + ")");
 
-        // Set permissions based on position
+
         setPermissions();
 
-        // Heading
+
         JLabel heading = new JLabel("Staff Management");
         heading.setBounds(450, 10, 400, 40);
         heading.setFont(new Font("Raleway", Font.BOLD, 30));
         heading.setForeground(new Color(220, 20, 60));
         add(heading);
 
-        // Input Panel
         createInputPanel();
-
-        // Button Panel
+        generateStaffID();
         createButtonPanel();
-
-        // Table Panel
         createTablePanel();
-
-        // Load data from database
         loadTableData();
 
-        // Window settings
+
         setSize(1200, 700);
         setLocation(150, 80);
         setLayout(null);
@@ -107,6 +102,8 @@ public class Staff extends JFrame implements ActionListener {
 
         txtStaffID = new JTextField();
         txtStaffID.setBounds(170, 70, 150, 25);
+        txtStaffID.setEditable(false);
+        txtStaffID.setBackground(Color.LIGHT_GRAY);
         add(txtStaffID);
 
         // First Name
@@ -155,19 +152,20 @@ public class Staff extends JFrame implements ActionListener {
         lblPosition.setFont(new Font("Arial", Font.BOLD, 14));
         add(lblPosition);
 
-        String[] positions = {"Select Position", "Manager", "Assistant Manager", "Supervisor",
-                "Department Manager", "Cashier", "Sales Assistant", "Storekeeper",
-                "Stock Clerk", "HR", "Admin", "Accountant", "IT", "System Admin", "Security"};
+        String[] positions = {"Select Position", "Manager", "Assistant Manager", "Supervisor", "Cashier", "Storekeeper", "HR", "Admin", "Accountant", "System Admin"};
         cmbPosition = new JComboBox<>(positions);
         cmbPosition.setBounds(870, 110, 200, 25);
         add(cmbPosition);
+
+
     }
 
     // Create button panel
     private void createButtonPanel() {
+        int yPos = 200;
         // Add Button
         btnAdd = new JButton("Add");
-        btnAdd.setBounds(50, 160, 100, 35);
+        btnAdd.setBounds(50, yPos, 100, 35);
         btnAdd.setBackground(new Color(34, 139, 34));
         btnAdd.setForeground(Color.WHITE);
         btnAdd.setFont(new Font("Arial", Font.BOLD, 14));
@@ -177,7 +175,7 @@ public class Staff extends JFrame implements ActionListener {
 
         // Update Button
         btnUpdate = new JButton("Update");
-        btnUpdate.setBounds(170, 160, 100, 35);
+        btnUpdate.setBounds(170, yPos, 100, 35);
         btnUpdate.setBackground(new Color(255, 140, 0));
         btnUpdate.setForeground(Color.WHITE);
         btnUpdate.setFont(new Font("Arial", Font.BOLD, 14));
@@ -188,8 +186,9 @@ public class Staff extends JFrame implements ActionListener {
         // Delete Button
         btnDelete = new JButton("Delete");
         btnDelete.setBounds(290, 160, 100, 35);
-        btnDelete.setBackground(new Color(220, 20, 60));
+        btnDelete.setBounds(290, yPos, 100, 35);
         btnDelete.setForeground(Color.WHITE);
+        btnDelete.setBackground(new Color(220, 60, 40));
         btnDelete.setFont(new Font("Arial", Font.BOLD, 14));
         btnDelete.addActionListener(this);
         btnDelete.setEnabled(canDelete);
@@ -197,7 +196,7 @@ public class Staff extends JFrame implements ActionListener {
 
         // Refresh Button
         btnRefresh = new JButton("Refresh");
-        btnRefresh.setBounds(410, 160, 100, 35);
+        btnRefresh.setBounds(410, yPos, 100, 35);
         btnRefresh.setBackground(new Color(70, 130, 180));
         btnRefresh.setForeground(Color.WHITE);
         btnRefresh.setFont(new Font("Arial", Font.BOLD, 14));
@@ -206,7 +205,7 @@ public class Staff extends JFrame implements ActionListener {
 
         // Print Button
         btnPrint = new JButton("Print Excel");
-        btnPrint.setBounds(530, 160, 120, 35);
+        btnPrint.setBounds(530, yPos, 120, 35);
         btnPrint.setBackground(new Color(128, 0, 128));
         btnPrint.setForeground(Color.WHITE);
         btnPrint.setFont(new Font("Arial", Font.BOLD, 14));
@@ -215,7 +214,7 @@ public class Staff extends JFrame implements ActionListener {
 
         // Back Button
         btnBack = new JButton("Back");
-        btnBack.setBounds(1020, 160, 100, 35);
+        btnBack.setBounds(1020, yPos, 100, 35);
         btnBack.setBackground(Color.BLACK);
         btnBack.setForeground(Color.WHITE);
         btnBack.setFont(new Font("Arial", Font.BOLD, 14));
@@ -223,16 +222,13 @@ public class Staff extends JFrame implements ActionListener {
         add(btnBack);
     }
 
-    // Create table panel
     private void createTablePanel() {
-        // Table model
         String[] columnNames = {"Staff ID", "First Name", "Last Name", "Contact No", "Address", "Position"};
         model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
         table.setFont(new Font("Arial", Font.PLAIN, 12));
         table.setRowHeight(25);
 
-        // Add selection listener
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && table.getSelectedRow() != -1) {
                 int row = table.getSelectedRow();
@@ -242,27 +238,22 @@ public class Staff extends JFrame implements ActionListener {
                 txtContactNo.setText(model.getValueAt(row, 3).toString());
                 txtAddress.setText(model.getValueAt(row, 4).toString());
                 cmbPosition.setSelectedItem(model.getValueAt(row, 5).toString());
+
             }
         });
 
-        // Scroll pane
         JScrollPane scrollPane = new JScrollPane(table);
-        scrollPane.setBounds(50, 220, 1100, 400);
+        scrollPane.setBounds(50, 260, 1100, 360);
         add(scrollPane);
     }
 
-    // Load data from database
     private void loadTableData() {
         try {
             Connection connection = DataBase_Connection.getConnection();
             String query = "SELECT * FROM staff";
             Statement stmt = connection.createStatement();
             ResultSet rs = stmt.executeQuery(query);
-
-            // Clear existing data
             model.setRowCount(0);
-
-            // Add rows to table
             while (rs.next()) {
                 String staffID = rs.getString("Staff_ID");
                 String fName = rs.getString("FName");
@@ -284,8 +275,8 @@ public class Staff extends JFrame implements ActionListener {
         }
     }
 
-    // Add new staff
     private void addStaff() {
+        if(txtStaffID.getText().isEmpty()) generateStaffID();
         String staffID = txtStaffID.getText().trim();
         String fName = txtFName.getText().trim();
         String lName = txtLName.getText().trim();
@@ -295,6 +286,9 @@ public class Staff extends JFrame implements ActionListener {
 
         if (staffID.isEmpty() || fName.isEmpty() || lName.isEmpty() || position.equals("Select Position")) {
             JOptionPane.showMessageDialog(this, "Please fill all required fields!");
+            return;
+        }
+        if (!validateInput(fName, lName, contactNo, address)) {
             return;
         }
 
@@ -326,7 +320,6 @@ public class Staff extends JFrame implements ActionListener {
         }
     }
 
-    // Update staff
     private void updateStaff() {
         String staffID = txtStaffID.getText().trim();
         String fName = txtFName.getText().trim();
@@ -334,15 +327,16 @@ public class Staff extends JFrame implements ActionListener {
         String contactNo = txtContactNo.getText().trim();
         String address = txtAddress.getText().trim();
         String position = cmbPosition.getSelectedItem().toString();
-
         if (staffID.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a staff member to update!");
             return;
         }
-
+        if (!validateInput(fName, lName, contactNo, address)) {
+            return;
+        }
         try {
             Connection connection = DataBase_Connection.getConnection();
-            String query = "UPDATE staff SET FName=?, LName=?, Contact_NO=?, Address=?, Position=? WHERE Staff_ID=?";
+            String query = "UPDATE staff SET FName=?, LName=?, Contact_NO=?, Address=?, Position=?, username=?, password=? WHERE Staff_ID=?";
             PreparedStatement pstmt = connection.prepareStatement(query);
             pstmt.setString(1, fName);
             pstmt.setString(2, lName);
@@ -350,18 +344,15 @@ public class Staff extends JFrame implements ActionListener {
             pstmt.setString(4, address);
             pstmt.setString(5, position);
             pstmt.setString(6, staffID);
-
+            pstmt.executeUpdate();
             int result = pstmt.executeUpdate();
-
             if (result > 0) {
                 JOptionPane.showMessageDialog(this, "Staff updated successfully!");
                 loadTableData();
                 clearFields();
             }
-
             pstmt.close();
             connection.close();
-
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error updating staff: " + e.getMessage());
@@ -453,6 +444,51 @@ public class Staff extends JFrame implements ActionListener {
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error creating Excel file: " + e.getMessage());
+        }
+    }
+
+    private boolean validateInput(String fName, String lName, String contact, String address) {
+        if (!fName.matches("[a-zA-Z]+")) {
+            JOptionPane.showMessageDialog(this, "First Name must contain letters only!");
+            return false;
+        }
+        if (!lName.matches("[a-zA-Z]+")) {
+            JOptionPane.showMessageDialog(this, "Last Name must contain letters only!");
+            return false;
+        }
+
+        if (address.length() < 5 || address.matches(".*[!@#$%^&*()].*")) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid, meaningful Address.");
+            return false;
+        }
+
+        if (!contact.matches("^07[014678]\\d{7}$")) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid Phone Number!\n" +
+                            "- Must be 10 Digits\n" +
+                            "- Must start with 077, 076, 074, 070, 071, or 078");
+            return false;
+        }
+
+        return true;
+    }
+    private void generateStaffID() {
+        try (Connection conn = DataBase_Connection.getConnection()) {
+            String sql = "SELECT Staff_ID FROM staff ORDER BY Staff_ID DESC LIMIT 1";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                String lastID = rs.getString("Staff_ID");
+                int idNum = Integer.parseInt(lastID.substring(1));
+                idNum=idNum+1;
+                String newID = String.format("S%03d", idNum);
+                txtStaffID.setText(newID);
+            } else {
+                txtStaffID.setText("S001");
+            }
+        } catch (SQLException | NumberFormatException e) {
+            e.printStackTrace();
+            txtStaffID.setText("S001");
         }
     }
 

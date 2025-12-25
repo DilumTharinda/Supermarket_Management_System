@@ -16,6 +16,7 @@ public class Home extends JFrame implements ActionListener {
     JButton SupplierOrder;
     JButton Users;
     JButton LogOut;
+    JButton Billing; // New Button
 
     // Panel to hold buttons
     JPanel buttonPanel1;
@@ -27,7 +28,12 @@ public class Home extends JFrame implements ActionListener {
     //constructor
     public Home(String username,String position){
         this.username = username;
-        this.position = position;
+        String realPosition = fetchPositionFromDB(username);
+        if (realPosition != null && !realPosition.isEmpty()) {
+            this.position = realPosition;
+        } else {
+            this.position = (position != null) ? position : "Guest";
+        }
 
         setTitle(" SuperMarket Home");
 
@@ -67,7 +73,7 @@ public class Home extends JFrame implements ActionListener {
 
         //Window
         setSize(1280, 720);
-        setLocation(120, 80);
+        setLocationRelativeTo(null);
         getContentPane().setBackground(new Color(230, 255, 240));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -93,14 +99,14 @@ public class Home extends JFrame implements ActionListener {
     private void createButtons(){
         //Customer
         Customer = new JButton("Customer");
-       //instead setbound
+        //instead setbound
         Customer.setPreferredSize(new Dimension(180, 70));//This tells the layout manager that this button 220 pixels wide and 70 pixels tall.
         Customer.setFont(new Font("Arial", Font.BOLD,20));
         Customer.setBackground(new Color(70,130,180));
         Customer.setForeground(Color.WHITE);
         Customer.setFocusable(false);//Don’t allow this component to gain keyboard focus
-       Customer.addActionListener(this);
-       buttonPanel1.add(Customer);
+        Customer.addActionListener(this);
+        buttonPanel1.add(Customer);
 
         //Staff
         Staff = new JButton("Staff");
@@ -172,6 +178,15 @@ public class Home extends JFrame implements ActionListener {
         LogOut.addActionListener(this);
         buttonPanel2.add(LogOut);
 
+        Billing = new JButton("Billing");
+        Billing.setPreferredSize(new Dimension(180, 70));
+        Billing.setFont(new Font("Arial", Font.BOLD, 20));
+        Billing.setBackground(new Color(255, 69, 0));
+        Billing.setForeground(Color.WHITE);
+        Billing.setFocusable(false);
+        Billing.addActionListener(this);
+        buttonPanel1.add(Billing);
+
     }
 
     private void setButtonVisibility(){
@@ -183,10 +198,12 @@ public class Home extends JFrame implements ActionListener {
         SupplierOrder.setVisible(false);
         Users.setVisible(false);
         LogOut.setVisible(true);
+        Billing.setVisible(false);
 
         switch (position.toLowerCase()){
             case "manager":
             case "admin":
+            case "assistantmanager":
                 Customer.setVisible(true);
                 CustomerOrder.setVisible(true);
                 Items.setVisible(true);
@@ -194,6 +211,7 @@ public class Home extends JFrame implements ActionListener {
                 Supplier.setVisible(true);
                 SupplierOrder.setVisible(true);
                 Users.setVisible(true);
+                Billing.setVisible(true);
                 break;
 
             case "supervisor":
@@ -210,10 +228,11 @@ public class Home extends JFrame implements ActionListener {
                 Customer.setVisible(true);
                 CustomerOrder.setVisible(true);
                 Items.setVisible(true);
+                Billing.setVisible(true);
                 //remove users, staff, supplier, supplier order access
                 break;
 
-            case "Stock Clerk":
+            case "storekeeper":
                 Items.setVisible(true);
                 Supplier.setVisible(true);
                 SupplierOrder.setVisible(true);
@@ -228,10 +247,17 @@ public class Home extends JFrame implements ActionListener {
                 SupplierOrder.setVisible(true);
                 break;
 
-            case "it":
+            case "system admin":
                 Users.setVisible(true);
                 Staff.setVisible(true);
                 Customer.setVisible(true);
+                break;
+
+            case "accountant":
+                Items.setVisible(true);
+                SupplierOrder.setVisible(true);
+                CustomerOrder.setVisible(true);
+                //remove users,staff, customer and customer order access
                 break;
 
             default:
@@ -249,35 +275,60 @@ public class Home extends JFrame implements ActionListener {
         buttonPanel2.revalidate();
         buttonPanel2.repaint();
     }
+    private String fetchPositionFromDB(String username) {
+        String dbPosition = ""; // Default empty
+        try (java.sql.Connection conn = DataBase_Connection.getConnection()) {
+            String sql = "SELECT s.Position " +
+                    "FROM staff s " +
+                    "INNER JOIN user u ON s.Staff_ID = u.Staff_ID " +
+                    "WHERE u.username = ?";
+            java.sql.PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            java.sql.ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                dbPosition = rs.getString("Position");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return dbPosition;
+    }
 
     @Override
     public void actionPerformed(ActionEvent event) {
         if (event.getSource() == Customer) {
-           this.dispose();
-           new Customer(username,position);
+            this.dispose();
+            new Customer(username,position);
 
         } else if (event.getSource() == CustomerOrder) {
             this.dispose();
-           new Customer_Order(username,position);
+            new Customer_Order(username,position);
         } else if (event.getSource() == Items) {
             this.dispose();
-           new Items(username,position);
+            new Items(username,position);
 
         } else if (event.getSource() == Staff) {
             this.dispose();
-           new Staff(username,position);
+            new Staff(username,position);
 
         } else if (event.getSource() == Supplier) {
             this.dispose();
-          new Supplier(username,position);
+            new Supplier(username,position);
 
         } else if (event.getSource() == SupplierOrder) {
             this.dispose();
-           new SupplierOrder(username,position);
+            new SupplierOrder(username,position);
 
         } else if (event.getSource() == Users) {
             this.dispose();
             new Users(username,position);
+
+        } // Inside Home.java actionPerformed method:
+        else if (event.getSource() == Billing) {
+            this.dispose();
+            // Pass 'position' as well
+            new Billing(username, position);
+
         } else if (event.getSource() == LogOut) {
             this.dispose();
             new Login();

@@ -288,20 +288,29 @@ public class SupplierOrder extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Please fill all required fields!");
             return;
         }
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        PreparedStatement updateItemStmt = null;
 
         try {
-            Connection connection = DataBase_Connection.getConnection();
+            connection = DataBase_Connection.getConnection();
             String query = "INSERT INTO supplier_order (Sup_Order_ID, Supplier_ID, Item_ID, Quantity, Date) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement pstmt = connection.prepareStatement(query);
+            pstmt = connection.prepareStatement(query);
             pstmt.setString(1, supOrderID);
             pstmt.setString(2, supplierID);
             pstmt.setString(3, itemID);
-            pstmt.setInt(4, Integer.parseInt(quantity));
+            int newQty = Integer.parseInt(quantity);
+            pstmt.setInt(4, newQty);
             pstmt.setString(5, date);
 
             int result = pstmt.executeUpdate();
 
             if (result > 0) {
+                String updateItemQuery = "UPDATE items SET Quantity = Quantity + ? WHERE Item_ID = ?";
+                updateItemStmt = connection.prepareStatement(updateItemQuery);
+                updateItemStmt.setInt(1, newQty);
+                updateItemStmt.setString(2, itemID);
+                updateItemStmt.executeUpdate();
                 JOptionPane.showMessageDialog(this, "Supplier order added successfully!");
                 loadTableData();
                 clearFields();
@@ -317,6 +326,9 @@ public class SupplierOrder extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Quantity must be a valid number!");
         }
     }
+    private void updateitems(){
+
+    }
 
     // Update supplier order
     private void updateSupplierOrder() {
@@ -330,18 +342,52 @@ public class SupplierOrder extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Please select a supplier order to update!");
             return;
         }
+        Connection connection = null;
+        PreparedStatement getOldStmt = null;
+        PreparedStatement revertItemStmt = null;
+        PreparedStatement addNewItemStmt = null;
+        PreparedStatement updateOrderStmt = null;
+        ResultSet rs = null;
+
 
         try {
-            Connection connection = DataBase_Connection.getConnection();
-            String query = "UPDATE supplier_order SET Supplier_ID=?, Item_ID=?, Quantity=?, Date=? WHERE Sup_Order_ID=?";
-            PreparedStatement pstmt = connection.prepareStatement(query);
-            pstmt.setString(1, supplierID);
-            pstmt.setString(2, itemID);
-            pstmt.setInt(3, Integer.parseInt(quantity));
-            pstmt.setString(4, date);
-            pstmt.setString(5, supOrderID);
+            connection = DataBase_Connection.getConnection();
+            String getOldQuery = "SELECT Quantity, Item_ID FROM supplier_order WHERE Sup_Order_ID = ?";
+            getOldStmt = connection.prepareStatement(getOldQuery);
+            getOldStmt.setString(1, supOrderID);
+            rs = getOldStmt.executeQuery();
+            int oldQty = 0;
+            String oldItemID = "";
 
-            int result = pstmt.executeUpdate();
+            if (rs.next()) {
+                oldQty = rs.getInt("Quantity");
+                oldItemID = rs.getString("Item_ID");
+            } else {
+                JOptionPane.showMessageDialog(this, "Order ID not found!");
+                return;
+            }
+            String revertQuery = "UPDATE items SET Quantity = Quantity - ? WHERE Item_ID = ?";
+            revertItemStmt = connection.prepareStatement(revertQuery);
+            revertItemStmt.setInt(1, oldQty);
+            revertItemStmt.setString(2, oldItemID);
+            revertItemStmt.executeUpdate();
+            int newQty = Integer.parseInt(quantity);
+            String addStockQuery = "UPDATE items SET Quantity = Quantity + ? WHERE Item_ID = ?";
+            addNewItemStmt = connection.prepareStatement(addStockQuery);
+            addNewItemStmt.setInt(1, newQty);
+            addNewItemStmt.setString(2, itemID); // Use newItemID in case the user changed the item
+            addNewItemStmt.executeUpdate();
+
+            String query = "UPDATE supplier_order SET Supplier_ID=?, Item_ID=?, Quantity=?, Date=? WHERE Sup_Order_ID=?";
+            updateOrderStmt = connection.prepareStatement(query);
+
+            updateOrderStmt.setString(1, supplierID);
+            updateOrderStmt.setString(2, itemID);
+            updateOrderStmt.setInt(3, newQty);
+            updateOrderStmt.setString(4, date);
+            updateOrderStmt.setString(5, supOrderID);
+
+            int result = updateOrderStmt.executeUpdate();
 
             if (result > 0) {
                 JOptionPane.showMessageDialog(this, "Supplier order updated successfully!");
@@ -349,7 +395,7 @@ public class SupplierOrder extends JFrame implements ActionListener {
                 clearFields();
             }
 
-            pstmt.close();
+            updateOrderStmt.close();
             connection.close();
 
         } catch (SQLException e) {

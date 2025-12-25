@@ -7,16 +7,16 @@ import java.sql.SQLException;
 public class DataBase_Connection {
 
     //DataBase Details
-    private static final String URL = "jdbc:mysql://localhost:3307/supermarket";//My local host
+    private static final String URL = "jdbc:mysql://localhost:3307/supermarket_new";//My local host
     private static final String USER = "root";
-    private static final String PASSWARD = "1234";
+    private static final String PASSWORD = "1234";
 
     //connect to DataBase
     public static Connection getConnection() throws SQLException{
         try {
             //load jdbc driver
             Class.forName("com.mysql.cj.jdbc.Driver");
-            return DriverManager.getConnection(URL,USER,PASSWARD);
+            return DriverManager.getConnection(URL,USER,PASSWORD);
         }
         catch (ClassNotFoundException e){
             throw new SQLException("MYSQL JDBC driver not found!", e);

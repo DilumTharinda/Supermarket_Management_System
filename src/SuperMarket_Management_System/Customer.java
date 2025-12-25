@@ -50,16 +50,11 @@ public class Customer extends JFrame implements ActionListener {
         heading.setForeground(new Color(70, 130, 180));
         add(heading);
 
-        // Input Panel
+
         createInputPanel();
-
-        // Button Panel
         createButtonPanel();
-
-        // Table Panel
+        generateCustomerID();
         createTablePanel();
-
-        // Load data from database
         loadTableData();
 
         // Window
@@ -107,6 +102,7 @@ public class Customer extends JFrame implements ActionListener {
 
         txtCustomerID = new JTextField();
         txtCustomerID.setBounds(170, 70, 150, 25);
+        txtCustomerID.setBackground(Color.LIGHT_GRAY);
         add(txtCustomerID);
 
         // First Name
@@ -271,6 +267,7 @@ public class Customer extends JFrame implements ActionListener {
 
     // Add new customer
     private void addCustomer() {
+        if(txtCustomerID.getText().isEmpty()) generateCustomerID();
         String customerID = txtCustomerID.getText().trim();
         String fName = txtFName.getText().trim();
         String lName = txtLName.getText().trim();
@@ -281,6 +278,10 @@ public class Customer extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Please fill all required fields!");
             return;
         }
+        if (!validateInput(fName, lName, contactNo, address)) {
+            return;
+        }
+
 
         try {
             Connection connection = DataBase_Connection.getConnection();
@@ -319,6 +320,9 @@ public class Customer extends JFrame implements ActionListener {
 
         if (customerID.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a customer to update!");
+            return;
+        }
+        if (!validateInput(fName, lName, contactNo, address)) {
             return;
         }
 
@@ -435,6 +439,50 @@ public class Customer extends JFrame implements ActionListener {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error creating Excel file: " + e.getMessage());
         }
+    }
+    private void generateCustomerID() {
+        try (Connection conn = DataBase_Connection.getConnection()) {
+            String sql = "SELECT Customer_ID FROM Customer ORDER BY Customer_ID DESC LIMIT 1";
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next()) {
+                String lastID = rs.getString("Customer_ID");
+                int idNum = Integer.parseInt(lastID.substring(1));
+                idNum=idNum+1;
+                String newID = String.format("C%03d", idNum);
+                txtCustomerID.setText(newID);
+            } else {
+                txtCustomerID.setText("C001");
+            }
+        } catch (SQLException | NumberFormatException e) {
+            e.printStackTrace();
+            txtCustomerID.setText("C001");
+        }
+    }
+    private boolean validateInput(String fName, String lName, String contact, String address) {
+        if (!fName.matches("[a-zA-Z]+")) {
+            JOptionPane.showMessageDialog(this, "First Name must contain letters only!");
+            return false;
+        }
+        if (!lName.matches("[a-zA-Z]+")) {
+            JOptionPane.showMessageDialog(this, "Last Name must contain letters only!");
+            return false;
+        }
+
+        if (address.length() < 5 || address.matches(".*[!@#$%^&*()].*")) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid, meaningful Address.");
+            return false;
+        }
+
+        if (!contact.matches("^07[014678]\\d{7}$")) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid Phone Number!\n" +
+                            "- Must be 10 Digits\n" +
+                            "- Must start with 077, 076, 074, 070, 071, or 078");
+            return false;
+        }
+
+        return true;
     }
 
     // Clear input fields

@@ -39,30 +39,17 @@ public class Supplier extends JFrame implements ActionListener {
         this.position = position;
 
         setTitle("Supplier Management - " + username + " (" + position + ")");
-
-        // Set permissions based on position
         setPermissions();
 
-        // Heading
         JLabel heading = new JLabel("Supplier Management");
         heading.setBounds(420, 10, 400, 40);
         heading.setFont(new Font("Raleway", Font.BOLD, 30));
         heading.setForeground(new Color(34, 139, 34));
         add(heading);
-
-        // Input Panel
         createInputPanel();
-
-        // Button Panel
         createButtonPanel();
-
-        // Table Panel
         createTablePanel();
-
-        // Load data from database
         loadTableData();
-
-        // Window settings
         setSize(1200, 700);
         setLocation(150, 80);
         setLayout(null);
@@ -71,8 +58,6 @@ public class Supplier extends JFrame implements ActionListener {
         setResizable(false);
         setVisible(true);
     }
-
-    // Set permissions based on user position
     private void setPermissions() {
         switch (position.toLowerCase()) {
             case "manager":
@@ -82,7 +67,6 @@ public class Supplier extends JFrame implements ActionListener {
                 canUpdate = true;
                 canDelete = true;
                 break;
-
             case "storekeeper":
                 canAdd = true;
                 canUpdate = true;
@@ -97,7 +81,6 @@ public class Supplier extends JFrame implements ActionListener {
         }
     }
 
-    // Create input panel
     private void createInputPanel() {
         // Supplier ID
         JLabel lblSupplierID = new JLabel("Supplier ID:");
@@ -281,6 +264,9 @@ public class Supplier extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Please fill all required fields!");
             return;
         }
+        if (!validateInput(fName, lName, contactNo, distributorCompany)) {
+            return;
+        }
 
         try {
             Connection connection = DataBase_Connection.getConnection();
@@ -319,6 +305,9 @@ public class Supplier extends JFrame implements ActionListener {
 
         if (supplierID.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a supplier to update!");
+            return;
+        }
+        if (!validateInput(fName, lName, contactNo, distributorCompany)) {
             return;
         }
 
@@ -435,6 +424,32 @@ public class Supplier extends JFrame implements ActionListener {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error creating Excel file: " + e.getMessage());
         }
+    }
+
+    private boolean validateInput(String fName, String lName, String contact, String distributorCompany) {
+        if (!fName.matches("[a-zA-Z]+")) {
+            JOptionPane.showMessageDialog(this, "First Name must contain letters only!");
+            return false;
+        }
+        if (!lName.matches("[a-zA-Z]+")) {
+            JOptionPane.showMessageDialog(this, "Last Name must contain letters only!");
+            return false;
+        }
+
+        if (distributorCompany.length() < 3 || distributorCompany.matches(".*[!@#$%^&*()].*")) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid, meaningful Address.");
+            return false;
+        }
+
+        if (!contact.matches("^07[014678]\\d{7}$")) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid Phone Number!\n" +
+                            "- Must be 10 Digits\n" +
+                            "- Must start with 077, 076, 074, 070, 071,021,011 or 078");
+            return false;
+        }
+
+        return true;
     }
 
     // Clear input fields

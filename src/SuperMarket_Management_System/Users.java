@@ -18,8 +18,8 @@ public class Users extends JFrame implements ActionListener {
     JButton btnAdd, btnUpdate, btnDelete, btnPrint, btnBack, btnRefresh;
 
     // Input fields
-    JTextField txtID, txtUsername, txtPassword, txtPosition;
-
+    JTextField txtStaffID, txtUsername;
+    JPasswordField txtPassword;
     // Table
     JTable table;
     DefaultTableModel model;
@@ -28,19 +28,32 @@ public class Users extends JFrame implements ActionListener {
     String username;
     String position;
 
+
     // Permission flags
     boolean canAdd = false;
     boolean canUpdate = false;
     boolean canDelete = false;
+    boolean isAdmin = false;
 
     //Constructor
     public Users(String username, String position) {
         this.username = username;
-        this.position = position;
+        this.position = (position != null) ? position : "Guest";
 
-        setTitle("User Management - " + username + " (" + position + ")");
+        String realPosition = fetchPositionFromDB(username);
 
-        // Set permissions based on position
+        if (!realPosition.isEmpty()) {
+            this.position = realPosition;
+        } else {
+            // Fallback if DB fetch fails (or use passed position)
+            this.position = position;
+        }
+
+        this.isAdmin = this.position.equalsIgnoreCase("admin");
+
+        setTitle("User Management - " + username + " (" + this.position + ")");
+
+        // Set permissions based on the DERIVED position
         setPermissions();
 
         // Heading
@@ -78,6 +91,7 @@ public class Users extends JFrame implements ActionListener {
             case "manager":
             case "it":
             case "admin":
+            case "assistantmanager":
                 canAdd = true;
                 canUpdate = true;
                 canDelete = true;
@@ -101,16 +115,19 @@ public class Users extends JFrame implements ActionListener {
     // Create input panel
     private void createInputPanel() {
         // ID
-        JLabel lblID = new JLabel("ID:");
-        lblID.setBounds(50, 70, 120, 25);
-        lblID.setFont(new Font("Arial", Font.BOLD, 14));
-        add(lblID);
+        JLabel lbStafflID = new JLabel("Satff ID:");
+        lbStafflID.setBounds(50, 70, 120, 25);
+        lbStafflID.setFont(new Font("Arial", Font.BOLD, 14));
+        add(lbStafflID);
 
-        txtID = new JTextField();
-        txtID.setBounds(170, 70, 150, 25);
-        txtID.setEditable(false); // ID is auto-increment
-        txtID.setBackground(Color.LIGHT_GRAY);
-        add(txtID);
+        txtStaffID = new JTextField();
+        txtStaffID .setBounds(170, 70, 150, 25);
+        txtStaffID.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                autoGenerateUsername();
+            }
+        });
+        add(txtStaffID );
 
         // Username
         JLabel lblUsername = new JLabel("Username:");
@@ -120,6 +137,7 @@ public class Users extends JFrame implements ActionListener {
 
         txtUsername = new JTextField();
         txtUsername.setBounds(470, 70, 200, 25);
+        txtUsername.setEditable(false);
         add(txtUsername);
 
         // Password
@@ -128,19 +146,10 @@ public class Users extends JFrame implements ActionListener {
         lblPassword.setFont(new Font("Arial", Font.BOLD, 14));
         add(lblPassword);
 
-        txtPassword = new JTextField();
+        txtPassword = new JPasswordField();
         txtPassword.setBounds(820, 70, 200, 25);
         add(txtPassword);
 
-        // Position
-        JLabel lblPosition = new JLabel("Position:");
-        lblPosition.setBounds(50, 110, 120, 25);
-        lblPosition.setFont(new Font("Arial", Font.BOLD, 14));
-        add(lblPosition);
-
-        txtPosition = new JTextField();
-        txtPosition.setBounds(170, 110, 200, 25);
-        add(txtPosition);
     }
 
     // Create button panel
@@ -206,22 +215,42 @@ public class Users extends JFrame implements ActionListener {
     // Create table panel
     private void createTablePanel() {
         // Table model
-        String[] columnNames = {"ID", "Username", "Password", "Position"};
+        String[] columnNames = {"Staff_ID", "Username", "Password"};
         model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
         table.setFont(new Font("Arial", Font.PLAIN, 12));
         table.setRowHeight(25);
-
-        // Add selection listener
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && table.getSelectedRow() != -1) {
                 int row = table.getSelectedRow();
-                txtID.setText(model.getValueAt(row, 0).toString());
+                txtStaffID.setText(model.getValueAt(row, 0).toString()); // Staff ID
                 txtUsername.setText(model.getValueAt(row, 1).toString());
                 txtPassword.setText(model.getValueAt(row, 2).toString());
-                txtPosition.setText(model.getValueAt(row, 3).toString());
             }
         });
+
+
+        table.getColumnModel().getColumn(2).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                // 1. Let Java handle the standard stuff (colors, selection highlighting)
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                // 2. Apply your Custom Logic
+                if (isAdmin) {
+                    // If Admin: Show the actual password (value)
+                    setText(value != null ? value.toString() : "");
+                } else {
+                    // If NOT Admin: Show dots
+                    setText("••••••••");
+                }
+
+                return this;
+            }
+        });
+
+        // Add selection listener
+
 
         // Scroll pane
         JScrollPane scrollPane = new JScrollPane(table);
@@ -233,7 +262,7 @@ public class Users extends JFrame implements ActionListener {
     private void loadTableData() {
         try {
             Connection connection = DataBase_Connection.getConnection();
-            String query = "SELECT * FROM users";
+            String query = "SELECT * FROM user";
             Statement stmt = connection.createStatement();
             ResultSet rs = stmt.executeQuery(query);
 
@@ -242,12 +271,17 @@ public class Users extends JFrame implements ActionListener {
 
             // Add rows to table
             while (rs.next()) {
-                int id = rs.getInt("id");
+                String staffID = rs.getString("Staff_ID");
                 String username = rs.getString("username");
                 String password = rs.getString("password");
-                String position = rs.getString("Position");
+                String displayPassword;
+                if (isAdmin) {
+                    displayPassword = password; // Admins see real password
+                } else {
+                    displayPassword = "●●●●●●"; // Others see dots
+                }
 
-                model.addRow(new Object[]{id, username, password, position});
+                model.addRow(new Object[]{staffID, username, displayPassword});
             }
 
             rs.close();
@@ -262,22 +296,32 @@ public class Users extends JFrame implements ActionListener {
 
     // Add new user
     private void addUser() {
+        String staffID = txtStaffID.getText().trim();
         String username = txtUsername.getText().trim();
-        String password = txtPassword.getText().trim();
-        String position = txtPosition.getText().trim();
+        String password = String.valueOf(txtPassword.getPassword()).trim();
 
-        if (username.isEmpty() || password.isEmpty() || position.isEmpty()) {
+        if (staffID.isEmpty() || username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill all required fields!");
             return;
+        }
+        if (!isValidPassword(password)) {
+            JOptionPane.showMessageDialog(this,
+                    "Password is too weak!\nIt must contain:\n- At least 1 Uppercase Letter\n- At least 1 Number\n- At least 1 Special Character",
+                    "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (!isStaffIdValid(staffID)) {
+            JOptionPane.showMessageDialog(this, "Error: Staff ID '" + staffID + "' does not exist in the Staff database.\nPlease add the Staff member first.");
+            return; // Stop the process
         }
 
         try {
             Connection connection = DataBase_Connection.getConnection();
-            String query = "INSERT INTO users (username, password, Position) VALUES (?, ?, ?)";
+            String query = "INSERT INTO user (Staff_ID, username, password) VALUES (?, ?, ?)";
             PreparedStatement pstmt = connection.prepareStatement(query);
-            pstmt.setString(1, username);
-            pstmt.setString(2, password);
-            pstmt.setString(3, position);
+            pstmt.setString(1, staffID);
+            pstmt.setString(2, username);
+            pstmt.setString(3, password);
 
             int result = pstmt.executeUpdate();
 
@@ -293,29 +337,47 @@ public class Users extends JFrame implements ActionListener {
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error adding user: " + e.getMessage());
+            if(e.getMessage().contains("Constraint")) {
+                JOptionPane.showMessageDialog(this, "Error: Staff ID may not exist or already has a user account.");
+            } else {
+                JOptionPane.showMessageDialog(this, "Error adding user: " + e.getMessage());
+            }
         }
+
     }
 
     // Update user
     private void updateUser() {
-        String id = txtID.getText().trim();
+        String staffID = txtStaffID.getText().trim();
         String username = txtUsername.getText().trim();
-        String password = txtPassword.getText().trim();
-        String position = txtPosition.getText().trim();
+        String password = String.valueOf(txtPassword.getPassword()).trim();
+        if (!isAdmin && password.contains("●")) {
+            JOptionPane.showMessageDialog(this, "Security: You must enter a NEW password to update this user.");
+            txtPassword.setText(""); // Clear it so they can type
+            return;
+        }
 
-        if (id.isEmpty()) {
+        if (staffID.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a user to update!");
             return;
+        }
+        if (!password.contains("●")) {
+            if (!isValidPassword(password)) {
+                JOptionPane.showMessageDialog(this,
+                        "Password is too weak!\nIt must contain:\n- At least 1 Uppercase Letter\n- At least 1 Number\n- At least 1 Special Character",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
         }
 
         try {
             Connection connection = DataBase_Connection.getConnection();
-            String query = "UPDATE users SET username=?, password=?, Position=? WHERE id=?";
+            String query = "UPDATE user SET username=?, password=? WHERE Staff_ID=?";
             PreparedStatement pstmt = connection.prepareStatement(query);
             pstmt.setString(1, username);
             pstmt.setString(2, password);
-            pstmt.setString(3, position);
-            pstmt.setInt(4, Integer.parseInt(id));
+            pstmt.setString(3, staffID);
+
 
             int result = pstmt.executeUpdate();
 
@@ -338,9 +400,9 @@ public class Users extends JFrame implements ActionListener {
 
     // Delete user
     private void deleteUser() {
-        String id = txtID.getText().trim();
+        String staffID = txtStaffID.getText().trim();
 
-        if (id.isEmpty()) {
+        if (staffID.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please select a user to delete!");
             return;
         }
@@ -353,9 +415,9 @@ public class Users extends JFrame implements ActionListener {
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 Connection connection = DataBase_Connection.getConnection();
-                String query = "DELETE FROM users WHERE id=?";
+                String query = "DELETE FROM user WHERE id=?";
                 PreparedStatement pstmt = connection.prepareStatement(query);
-                pstmt.setInt(1, Integer.parseInt(id));
+                pstmt.setString(1, staffID);
 
                 int result = pstmt.executeUpdate();
 
@@ -428,10 +490,83 @@ public class Users extends JFrame implements ActionListener {
 
     // Clear input fields
     private void clearFields() {
-        txtID.setText("");
+        txtStaffID.setText("");
         txtUsername.setText("");
         txtPassword.setText("");
-        txtPosition.setText("");
+
+    }
+    private boolean isValidPassword(String password) {
+        if (!password.matches(".*[A-Z].*")) {
+            return false;
+        }
+        if (!password.matches(".*\\d.*")) {
+            return false;
+        }
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+            return false;
+        }
+
+        return true;
+    }
+    private boolean isStaffIdValid(String staffID) {
+        boolean exists = false;
+        try (Connection conn = DataBase_Connection.getConnection()) {
+            String sql = "SELECT Staff_ID FROM staff WHERE Staff_ID = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, staffID);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                exists = true; // Found it!
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return exists;
+    }
+    private String fetchPositionFromDB(String username) {
+        String dbPosition = "";
+        try (Connection conn = DataBase_Connection.getConnection()) {
+            String sql = "SELECT s.Position FROM staff s " +
+                    "INNER JOIN user u ON s.Staff_ID = u.Staff_ID " +
+                    "WHERE u.username = ?";
+
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, username);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                dbPosition = rs.getString("Position");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return dbPosition;
+    }
+    private String fetchStaffPosition(String staffID) {
+        String pos = null;
+        try (Connection conn = DataBase_Connection.getConnection()) {
+            String sql = "SELECT Position FROM staff WHERE Staff_ID = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, staffID);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                pos = rs.getString("Position");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return pos;
+    }
+    private void autoGenerateUsername() {
+        String id = txtStaffID.getText().trim();
+        if (id.isEmpty()) return;
+        String staffPos = fetchStaffPosition(id);
+        if (staffPos != null) {
+            String cleanPos = staffPos.replace(" ", "");
+            String autoUser = id + "_" + cleanPos;
+            txtUsername.setText(autoUser);
+        }
     }
 
     @Override
@@ -448,10 +583,10 @@ public class Users extends JFrame implements ActionListener {
         } else if (e.getSource() == btnPrint) {
             printToExcel();
         } else if (e.getSource() == btnBack) {
-            this.dispose();
-            new Home(username, position);
+            this.dispose(); // Close current window
+            new Home(username, position); // Return to Home screen
         }
+    }
     }
 
 
-}
